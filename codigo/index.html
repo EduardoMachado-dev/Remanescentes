@@ -4,35 +4,92 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hub de Fichas - RPG Remanescentes</title>
-    <link rel="stylesheet" href="assets/styles.css">
     <style>
+        :root {
+            --cor-fundo: rgba(34, 17, 0, 0.7);
+            --cor-destaque: rgba(51, 34, 17, 0.8);
+            --cor-botao: #a67c52;
+            --cor-botao-hover: #c89f72;
+            --cor-texto: #fdf6e3;
+        }
+        
+        body {
+            font-family: 'Georgia', serif;
+            background: url('https://i.imgur.com/3ZA1sKc.jpeg') no-repeat center center fixed;
+            background-size: cover;
+            color: var(--cor-texto);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
         .hub-container {
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+        }
+        
+        h1, h2 {
+            color: var(--cor-texto);
             text-align: center;
         }
         
         .ficha-card {
-            background: rgba(51, 34, 17, 0.8);
-            border-radius: 10px;
+            background-color: var(--cor-destaque);
+            border-radius: 8px;
             padding: 15px;
             margin: 10px 0;
-            cursor: pointer;
             transition: transform 0.3s;
+            cursor: pointer;
         }
         
         .ficha-card:hover {
             transform: scale(1.02);
-            background: rgba(76, 61, 42, 0.8);
+            background-color: rgba(76, 61, 42, 0.8);
         }
         
-        .action-buttons {
-            margin: 30px 0;
+        button {
+            background-color: var(--cor-botao);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-family: 'Georgia', serif;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--cor-botao-hover);
+        }
+        
+        .btn-danger {
+            background-color: #8b0000;
+        }
+        
+        .btn-danger:hover {
+            background-color: #a52a2a;
         }
         
         .hidden {
             display: none;
+        }
+        
+        .button-group {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        input {
+            padding: 8px;
+            border-radius: 5px;
+            border: none;
+            margin: 5px 0;
+            width: 100%;
+            max-width: 300px;
         }
     </style>
 </head>
@@ -40,9 +97,9 @@
     <div class="hub-container">
         <h1>Gerenciador de Fichas RPG</h1>
         
-        <div class="action-buttons">
-            <button id="novaFichaBtn" class="btn-primary">➕ Nova Ficha</button>
-            <button id="carregarFichaBtn" class="btn-secondary">📂 Carregar Ficha</button>
+        <div class="button-group">
+            <button id="novaFichaBtn">➕ Nova Ficha</button>
+            <button id="carregarFichaBtn">📂 Carregar Ficha</button>
         </div>
         
         <div id="listaFichas">
@@ -52,102 +109,69 @@
         
         <div id="novaFichaForm" class="hidden">
             <h2>Criar Nova Ficha</h2>
-            <label>Nome do Personagem: 
-                <input type="text" id="novoPersonagemNome">
+            <label>
+                Nome do Personagem:
+                <input type="text" id="novoPersonagemNome" required>
             </label>
-            <label>Jogador: 
+            <label>
+                Jogador:
                 <input type="text" id="novoJogadorNome">
             </label>
             <div class="button-group">
-                <button id="confirmarNovaFicha" class="btn-primary">Criar</button>
-                <button id="cancelarNovaFicha" class="btn-secondary">Cancelar</button>
+                <button id="confirmarNovaFicha">Criar</button>
+                <button id="cancelarNovaFicha">Cancelar</button>
             </div>
         </div>
     </div>
 
-    <script src="assets/scripts.js"></script>
     <script>
-        // Gerenciamento do Hub
+        // Gerar ID único para cada ficha
+        function gerarIdUnico() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        }
+
+        // Carregar fichas salvas
+        function carregarFichas() {
+            return JSON.parse(localStorage.getItem('fichasRPG')) || [];
+        }
+
+        // Atualizar a lista de fichas na tela
+        function atualizarListaFichas() {
+            const listaFichas = document.getElementById('listaFichas');
+            const fichas = carregarFichas();
+            
+            listaFichas.innerHTML = '<h2>Suas Fichas</h2>';
+            
+            if (fichas.length === 0) {
+                listaFichas.innerHTML += '<p>Nenhuma ficha encontrada.</p>';
+                return;
+            }
+            
+            fichas.forEach((ficha, index) => {
+                const card = document.createElement('div');
+                card.className = 'ficha-card';
+                card.innerHTML = `
+                    <h3>${ficha.nome || 'Personagem sem nome'}</h3>
+                    <p>Jogador: ${ficha.jogador || 'Não informado'}</p>
+                    <p>Nível: ${ficha.nivel || 1}</p>
+                    <button onclick="abrirFicha('${ficha.id}')">Abrir</button>
+                    <button onclick="excluirFicha('${ficha.id}')" class="btn-danger">Excluir</button>
+                `;
+                listaFichas.appendChild(card);
+            });
+        }
+
+        // Inicialização
         document.addEventListener('DOMContentLoaded', () => {
-            const fichasSalvas = JSON.parse(localStorage.getItem('fichasRPG')) || [];
+            atualizarListaFichas();
             
             // Elementos DOM
-            const listaFichas = document.getElementById('listaFichas');
-            const novaFichaForm = document.getElementById('novaFichaForm');
             const novaFichaBtn = document.getElementById('novaFichaBtn');
             const carregarFichaBtn = document.getElementById('carregarFichaBtn');
+            const novaFichaForm = document.getElementById('novaFichaForm');
             const confirmarNovaFicha = document.getElementById('confirmarNovaFicha');
             const cancelarNovaFicha = document.getElementById('cancelarNovaFicha');
             
-            // Atualiza a lista de fichas
-            function atualizarListaFichas() {
-                listaFichas.innerHTML = '<h2>Suas Fichas</h2>';
-                
-                if (fichasSalvas.length === 0) {
-                    listaFichas.innerHTML += '<p>Nenhuma ficha encontrada.</p>';
-                    return;
-                }
-                
-                fichasSalvas.forEach((ficha, index) => {
-                    const card = document.createElement('div');
-                    card.className = 'ficha-card';
-                    card.innerHTML = `
-                        <h3>${ficha.nome || 'Personagem sem nome'}</h3>
-                        <p>Jogador: ${ficha.jogador || 'Não informado'}</p>
-                        <p>Nível: ${ficha.nivel || 1}</p>
-                        <button onclick="abrirFicha(${index})" class="btn-small">Abrir</button>
-                        <button onclick="excluirFicha(${index})" class="btn-small btn-danger">Excluir</button>
-                    `;
-                    listaFichas.appendChild(card);
-                });
-            }
-            
-// Adicione esta função para gerar IDs únicos
-function gerarIdUnico() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
-}
-
-// Modifique o evento de criação de nova ficha
-confirmarNovaFicha.addEventListener('click', () => {
-    const nome = document.getElementById('novoPersonagemNome').value;
-    const jogador = document.getElementById('novoJogadorNome').value;
-    
-    if (!nome) {
-        alert('Digite um nome para o personagem!');
-        return;
-    }
-    
-    const novaFicha = {
-        id: gerarIdUnico(), // ID único aqui
-        nome,
-        jogador,
-        nivel: 1,
-        dataCriacao: new Date().toISOString(),
-        atributos: {
-            for: 1, des: 1, con: 1, int: 1, car: 1
-        }
-    };
-    
-    // Obter fichas existentes
-    const fichasSalvas = JSON.parse(localStorage.getItem('fichasRPG')) || [];
-    
-    // Adicionar nova ficha
-    fichasSalvas.push(novaFicha);
-    localStorage.setItem('fichasRPG', JSON.stringify(fichasSalvas));
-    
-    // Salvar a ficha atual pelo ID
-    localStorage.setItem('fichaAtual', novaFicha.id);
-    
-    // Redirecionar para a ficha com o ID como parâmetro
-    window.location.href = `ficha.html?id=${novaFicha.id}`;
-});
-
-// Modifique a função abrirFicha
-function abrirFicha(id) {
-    localStorage.setItem('fichaAtual', id);
-    window.location.href = `ficha.html?id=${id}`;
-}
-
             // Mostrar formulário de nova ficha
             novaFichaBtn.addEventListener('click', () => {
                 novaFichaForm.classList.remove('hidden');
@@ -156,19 +180,30 @@ function abrirFicha(id) {
             // Cancelar criação
             cancelarNovaFicha.addEventListener('click', () => {
                 novaFichaForm.classList.add('hidden');
+                document.getElementById('novoPersonagemNome').value = '';
+                document.getElementById('novoJogadorNome').value = '';
             });
             
             // Confirmar nova ficha
             confirmarNovaFicha.addEventListener('click', () => {
-                const nome = document.getElementById('novoPersonagemNome').value;
-                const jogador = document.getElementById('novoJogadorNome').value;
+                const nome = document.getElementById('novoPersonagemNome').value.trim();
+                const jogador = document.getElementById('novoJogadorNome').value.trim();
                 
                 if (!nome) {
                     alert('Digite um nome para o personagem!');
                     return;
                 }
                 
+                const fichas = carregarFichas();
+                
+                // Verificar se nome já existe
+                if (fichas.some(f => f.nome.toLowerCase() === nome.toLowerCase())) {
+                    alert('Já existe uma ficha com este nome!');
+                    return;
+                }
+                
                 const novaFicha = {
+                    id: gerarIdUnico(),
                     nome,
                     jogador,
                     nivel: 1,
@@ -178,58 +213,61 @@ function abrirFicha(id) {
                     }
                 };
                 
-                fichasSalvas.push(novaFicha);
-                localStorage.setItem('fichasRPG', JSON.stringify(fichasSalvas));
-                localStorage.setItem('fichaAtual', JSON.stringify(novaFicha));
+                fichas.push(novaFicha);
+                localStorage.setItem('fichasRPG', JSON.stringify(fichas));
                 
-                novaFichaForm.classList.add('hidden');
-                atualizarListaFichas();
-                
-                // Redireciona para a ficha
-                window.location.href = 'ficha.html';
+                // Redirecionar para a ficha com ID
+                window.location.href = `ficha.html?id=${novaFicha.id}`;
             });
             
-            // Carregar ficha existente
+            // Carregar ficha existente de arquivo
             carregarFichaBtn.addEventListener('click', () => {
                 const input = document.createElement('input');
                 input.type = 'file';
                 input.accept = '.json';
+                
                 input.onchange = e => {
                     const file = e.target.files[0];
+                    if (!file) return;
+                    
                     const reader = new FileReader();
                     reader.onload = event => {
                         try {
                             const ficha = JSON.parse(event.target.result);
-                            localStorage.setItem('fichaAtual', JSON.stringify(ficha));
-                            window.location.href = 'ficha.html';
+                            
+                            if (!ficha.id) {
+                                ficha.id = gerarIdUnico(); // Garante ID se importar ficha antiga
+                            }
+                            
+                            const fichas = carregarFichas();
+                            fichas.push(ficha);
+                            localStorage.setItem('fichasRPG', JSON.stringify(fichas));
+                            
+                            window.location.href = `ficha.html?id=${ficha.id}`;
                         } catch (error) {
                             alert('Erro ao carregar ficha: ' + error.message);
                         }
                     };
                     reader.readAsText(file);
                 };
+                
                 input.click();
             });
-            
-            // Inicializa a lista
-            atualizarListaFichas();
         });
-        
+
         // Funções globais para os botões
-        function abrirFicha(index) {
-            const fichas = JSON.parse(localStorage.getItem('fichasRPG')) || [];
-            if (fichas[index]) {
-                localStorage.setItem('fichaAtual', JSON.stringify(fichas[index]));
-                window.location.href = 'ficha.html';
-            }
+        function abrirFicha(id) {
+            localStorage.setItem('fichaAtual', id);
+            window.location.href = `ficha.html?id=${id}&t=${Date.now()}`; // Cache buster
         }
-        
-        function excluirFicha(index) {
-            if (confirm('Tem certeza que deseja excluir esta ficha?')) {
-                const fichas = JSON.parse(localStorage.getItem('fichasRPG')) || [];
-                fichas.splice(index, 1);
-                localStorage.setItem('fichasRPG', JSON.stringify(fichas));
-                document.location.reload();
+
+        function excluirFicha(id) {
+            if (confirm('Tem certeza que deseja excluir esta ficha permanentemente?')) {
+                const fichas = carregarFichas();
+                const novasFichas = fichas.filter(f => f.id !== id);
+                
+                localStorage.setItem('fichasRPG', JSON.stringify(novasFichas));
+                atualizarListaFichas();
             }
         }
     </script>
