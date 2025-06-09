@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ficha de Personagem - RPG Remanescentes</title>
+    <style>
+        :root {
+            --cor-fundo: rgba(34, 17, 0, 0.7);
+            --cor-destaque: rgba(51, 34, 17, 0.8);
+            --cor-botao: #a67c52;
+            --cor-botao-hover: #c89f72;
+            --cor-borda: #c4a484;
+            --cor-texto: #fdf6e3;
+        }
+        
+        body {
+            font-family: 'Georgia', serif;
+            background: url('https://i.imgur.com/3ZA1sKc.jpeg') no-repeat center center fixed;
+            background-size: cover;
+            color: var(--cor-texto);
+            margin: 20px;
+            line-height: 1.6;
+        }
+        
+        h1, h2 {
+            background-color: var(--cor-destaque);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 0;
+        }
+        
+        label, table {
+            background-color: var(--cor-fundo);
+            padding: 10px;
+            border-radius: 8px;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        
+        th, td {
+            border: 1px solid var(--cor-borda);
+            padding: 8px;
+            text-align: center;
+        }
+        
+        input, textarea, button, select {
+            margin: 5px;
+            padding: 8px;
+            border-radius: 5px;
+            border: none;
+            font-family: 'Georgia', serif;
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+        
+        input[type="number"] {
+            width: 60px;
+        }
+        
+        button {
+            background-color: var(--cor-botao);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            padding: 8px 15px;
+        }
+        
+        button:hover {
+            background-color: var(--cor-botao-hover);
+        }
+        
+        .section {
+            margin-bottom: 25px;
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .save-buttons {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .save-buttons button {
+            display: block;
+            min-width: 120px;
+            margin: 0;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 1001;
+            animation: fadeIn 0.5s, fadeOut 0.5s 2.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .section, table {
+                overflow-x: auto;
+                display: block;
+            }
+            
+            .save-buttons {
+                position: static;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+            
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+            
+            input, textarea, button {
+                width: 100%;
+                box-sizing: border-box;
+            }
+        }
+        
+        .attribute-total {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+
+<div class="save-buttons">
+    <button onclick="salvarFicha()">💾 Salvar</button>
+    <button onclick="carregarFicha()">📂 Carregar</button>
+    <button onclick="exportarFicha()">📥 Exportar</button>
+    <button onclick="importarFicha()">📤 Importar</button>
+</div>
+
+<h1>Ficha de Personagem – RPG Remanescentes</h1>
+
+<div class="section">
+<h2>1. Informações Básicas</h2>
+<div class="two-columns">
+    <label>Nome: <input type="text" id="nome"></label>
+    <label>Jogador: <input type="text" id="jogador"></label>
+    <label>Raça: <input type="text" id="raca"></label>
+    <label>Tribo/Reino: <input type="text" id="tribo"></label>
+    <label>Classe: <input type="text" id="classe"></label>
+    <label>Nível: <input type="number" id="nivel" value="1" min="1" onchange="atualizarTotais()"></label>
+    <label>Experiência: <input type="number" id="xp" value="0" min="0"></label>
+</div>
+</div>
+
+<div class="section">
+<h2>2. Atributos Primários</h2>
+<table>
+    <tr>
+        <th>Atributo</th><th>Base</th><th>Bônus</th><th>Mod</th><th>Total</th>
+    </tr>
+    <tr>
+        <td>FOR</td>
+        <td><input type="number" id="for_base" value="1" min="1" onchange="atualizarTotais()"></td>
+        <td><input type="number" id="for_bonus" value="0" min="0" onchange="atualizarTotais()"></td>
+        <td><input type="number" id="for_mod" value="0" onchange="atualizarTotais()"></td>
+        <td><span id="for_total" class="attribute-total">1</span></td>
+    </tr>
+    <tr>
+        <td>DES</td>
+        <td><input type="number" id="des_base" value="1" min="1" onchange="atualizarTotais()"></td>
+        <td><input type="number" id="des_bonus" value="0" min="0" onchange="atualizarTotais()"></td>
+        <td><input type="number" id="des_mod" value="0" onchange="atualizarTotais()"></td>
+        <td><span id="des_total" class="attribute-total">1</span></td>
+    </tr>
+    <tr>
+        <td>CON</td>
+        <td><input type="number" id="con_base" value="1" min="1" onchange="atualizarTotais()"></td>
+        <td><input type="number" id="con_bonus" value="0" min="0" onchange="atualizarTotais()"></td>
+        <td><input type="number" id="con_mod" value="0" onchange="atualizarTotais()"></td>
+        <td><span id="con_total" class="attribute-total">1</span></td>
+    </tr>
+    <tr>
+        <td>INT</td>
+        <td><input type="number" id="int_base" value="1" min="1" onchange="atualizarTotais()"></td>
+        <td><input type="number" id="int_bonus" value="0" min="0" onchange="atualizarTotais()"></td>
+        <td><input type="number" id="int_mod" value="0" onchange="atualizarTotais()"></td>
+        <td><span id="int_total" class="attribute-total">1</span></td>
+    </tr>
+    <tr>
+        <td>CAR</td>
+        <td><input type="number" id="car_base" value="1" min="1" onchange="atualizarTotais()"></td>
+        <td><input type="number" id="car_bonus" value="0" min="0" onchange="atualizarTotais()"></td>
+        <td><input type="number" id="car_mod" value="0" onchange="atualizarTotais()"></td>
+        <td><span id="car_total" class="attribute-total">1</span></td>
+    </tr>
+</table>
+</div>
+
+<div class="section">
+<h2>3. Recursos</h2>
+<div class="two-columns">
+    <label>Vida Máxima: <span id="vida_max" class="attribute-total">0</span></label>
+    <label>Defesa: <span id="defesa" class="attribute-total">0</span></label>
+    <label>Mana Máxima: <span id="mana_max" class="attribute-total">0</span></label>
+    <label>Pontos de Esforço: <span id="esforco_max" class="attribute-total">0</span></label>
+</div>
+</div>
+
+<div class="section">
+<h2>Configurações de Recursos</h2>
+<div class="two-columns">
+    <h3>Vida</h3>
+    <label>Vida por Nível: <input type="number" id="hp_per_level" value="0" min="0" onchange="calcularRecursos()"></label>
+    <label>Bônus Vida da Raça: <input type="number" id="race_hp_bonus" value="0" min="0" onchange="calcularRecursos()"></label>
+    <label>Bônus Vida da Classe: <input type="number" id="class_hp_bonus" value="0" min="0" onchange="calcularRecursos()"></label>
+
+    <h3>Mana</h3>
+    <label>Mana por Nível: <input type="number" id="mana_per_level" value="0" min="0" onchange="calcularRecursos()"></label>
+    <label>Bônus Mana da Raça: <input type="number" id="race_mana_bonus" value="0" min="0" onchange="calcularRecursos()"></label>
+    <label>Bônus Mana da Classe: <input type="number" id="class_mana_bonus" value="0" min="0" onchange="calcularRecursos()"></label>
+
+    <h3>Esforço</h3>
+    <label>Esforço por Nível: <input type="number" id="effort_per_level" value="0" min="0" onchange="calcularRecursos()"></label>
+    <label>Bônus Esforço da Raça: <input type="number" id="race_effort_bonus" value="0" min="0" onchange="calcularRecursos()"></label>
+    <label>Bônus Esforço da Classe: <input type="number" id="class_effort_bonus" value="0" min="0" onchange="calcularRecursos()"></label>
+</div>
+</div>
+
+<div class="section">
+    <h2>4. Habilidades de Classe</h2>
+    <table id="habilidades">
+      <tr><th>Nome</th><th>Custo</th><th>Alcance</th><th>Efeito</th><th>Usos/Dia</th><th>Remover</th></tr>
+    </table>
+    <button onclick="adicionarHabilidade()">Adicionar Habilidade</button>
+</div>
+
+<div class="section">
+    <h2>5. Magias Conhecidas</h2>
+    <table id="magias">
+      <tr><th>Nome</th><th>Escola</th><th>Nível</th><th>Elemento</th><th>Custo</th><th>Alcance</th><th>Descrição</th><th>Remover</th></tr>
+    </table>
+    <button onclick="adicionarMagia()">Adicionar Magia</button>
+</div>
+
+<div class="section">
+    <h2>6. Inventário</h2>
+    <table id="inventario">
+      <tr><th>Item</th><th>Qtd</th><th>Peso/U</th><th>Peso Total</th><th>Descrição</th><th>Remover</th></tr>
+    </table>
+    <label>Peso Total do Inventário: <span id="peso_total" class="attribute-total">0</span></label><br>
+    <button onclick="adicionarItem()">Adicionar Item</button>
+</div>
+
+<div class="section">
+    <h2>7. Notas</h2>
+    <textarea rows="8" cols="50" id="notas" style="width: 100%;"></textarea>
+</div>
+
+<div class="section">
+<h2>8. Perícias</h2>
+
+<h3>Força</h3>
+<table id="pericias_for">
+  <tr><th>Perícia</th><th>Base</th><th>Bônus</th><th>Mod</th><th>Total</th></tr>
+  <tr><td>Atletismo</td><td><input type="number" id="atletismo_base" value="0" min="0"></td><td><input type="number" id="atletismo_bonus" value="0" min="0"></td><td><input type="number" id="atletismo_mod" value="0"></td><td><span id="atletismo_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Luta</td><td><input type="number" id="luta_for_base" value="0" min="0"></td><td><input type="number" id="luta_for_bonus" value="0" min="0"></td><td><input type="number" id="luta_for_mod" value="0"></td><td><span id="luta_for_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Mineração</td><td><input type="number" id="mineracao_base" value="0" min="0"></td><td><input type="number" id="mineracao_bonus" value="0" min="0"></td><td><input type="number" id="mineracao_mod" value="0"></td><td><span id="mineracao_total" class="attribute-total">0</span></td></tr>
+</table>
+
+<h3>Destreza</h3>
+<table id="pericias_des">
+  <tr><th>Perícia</th><th>Base</th><th>Bônus</th><th>Mod</th><th>Total</th></tr>
+  <tr><td>Abrir Fechadura</td><td><input type="number" id="fechadura_base" value="0" min="0"></td><td><input type="number" id="fechadura_bonus" value="0" min="0"></td><td><input type="number" id="fechadura_mod" value="0"></td><td><span id="fechadura_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Acrobacia</td><td><input type="number" id="acrobacia_base" value="0" min="0"></td><td><input type="number" id="acrobacia_bonus" value="0" min="0"></td><td><input type="number" id="acrobacia_mod" value="0"></td><td><span id="acrobacia_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Cavalgar</td><td><input type="number" id="cavalgar_base" value="0" min="0"></td><td><input type="number" id="cavalgar_bonus" value="0" min="0"></td><td><input type="number" id="cavalgar_mod" value="0"></td><td><span id="cavalgar_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Equilíbrio</td><td><input type="number" id="equilibrio_base" value="0" min="0"></td><td><input type="number" id="equilibrio_bonus" value="0" min="0"></td><td><input type="number" id="equilibrio_mod" value="0"></td><td><span id="equilibrio_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Furtividade</td><td><input type="number" id="furtividade_base" value="0" min="0"></td><td><input type="number" id="furtividade_bonus" value="0" min="0"></td><td><input type="number" id="furtividade_mod" value="0"></td><td><span id="furtividade_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Luta</td><td><input type="number" id="luta_des_base" value="0" min="0"></td><td><input type="number" id="luta_des_bonus" value="0" min="0"></td><td><input type="number" id="luta_des_mod" value="0"></td><td><span id="luta_des_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Prestidigitação</td><td><input type="number" id="prestidigitacao_base" value="0" min="0"></td><td><input type="number" id="prestidigitacao_bonus" value="0" min="0"></td><td><input type="number" id="prestidigitacao_mod" value="0"></td><td><span id="prestidigitacao_total" class="attribute-total">0</span></td></tr>
+</table>
+
+<h3>Intelecto</h3>
+<table id="pericias_int">
+  <tr><th>Perícia</th><th>Base</th><th>Bônus</th><th>Mod</th><th>Total</th></tr>
+  <tr><td>Alquimia</td><td><input type="number" id="alquimia_base" value="0" min="0"></td><td><input type="number" id="alquimia_bonus" value="0" min="0"></td><td><input type="number" id="alquimia_mod" value="0"></td><td><span id="alquimia_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Arcanismo</td><td><input type="number" id="arcanismo_base" value="0" min="0"></td><td><input type="number" id="arcanismo_bonus" value="0" min="0"></td><td><input type="number" id="arcanismo_mod" value="0"></td><td><span id="arcanismo_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Canalização</td><td><input type="number" id="canalizacao_base" value="0" min="0"></td><td><input type="number" id="canalizacao_bonus" value="0" min="0"></td><td><input type="number" id="canalizacao_mod" value="0"></td><td><span id="canalizacao_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Falsificação</td><td><input type="number" id="falsificacao_base" value="0" min="0"></td><td><input type="number" id="falsificacao_bonus" value="0" min="0"></td><td><input type="number" id="falsificacao_mod" value="0"></td><td><span id="falsificacao_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Intuição</td><td><input type="number" id="intuicao_base" value="0" min="0"></td><td><input type="number" id="intuicao_bonus" value="0" min="0"></td><td><input type="number" id="intuicao_mod" value="0"></td><td><span id="intuicao_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Investigação</td><td><input type="number" id="investigacao_base" value="0" min="0"></td><td><input type="number" id="investigacao_bonus" value="0" min="0"></td><td><input type="number" id="investigacao_mod" value="0"></td><td><span id="investigacao_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Medicina</td><td><input type="number" id="medicina_base" value="0" min="0"></td><td><input type="number" id="medicina_bonus" value="0" min="0"></td><td><input type="number" id="medicina_mod" value="0"></td><td><span id="medicina_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Percepção</td><td><input type="number" id="percepcao_base" value="0" min="0"></td><td><input type="number" id="percepcao_bonus" value="0" min="0"></td><td><input type="number" id="percepcao_mod" value="0"></td><td><span id="percepcao_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Sobrevivência</td><td><input type="number" id="sobrevivencia_base" value="0" min="0"></td><td><input type="number" id="sobrevivencia_bonus" value="0" min="0"></td><td><input type="number" id="sobrevivencia_mod" value="0"></td><td><span id="sobrevivencia_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Vontade</td><td><input type="number" id="vontade_base" value="0" min="0"></td><td><input type="number" id="vontade_bonus" value="0" min="0"></td><td><input type="number" id="vontade_mod" value="0"></td><td><span id="vontade_total" class="attribute-total">0</span></td></tr>
+</table>
+
+<h3>Carisma</h3>
+<table id="pericias_car">
+  <tr><th>Perícia</th><th>Base</th><th>Bônus</th><th>Mod</th><th>Total</th></tr>
+  <tr><td>Adestrar Animais</td><td><input type="number" id="adestrar_base" value="0" min="0"></td><td><input type="number" id="adestrar_bonus" value="0" min="0"></td><td><input type="number" id="adestrar_mod" value="0"></td><td><span id="adestrar_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Atuação</td><td><input type="number" id="atuacao_base" value="0" min="0"></td><td><input type="number" id="atuacao_bonus" value="0" min="0"></td><td><input type="number" id="atuacao_mod" value="0"></td><td><span id="atuacao_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Diplomacia</td><td><input type="number" id="diplomacia_base" value="0" min="0"></td><td><input type="number" id="diplomacia_bonus" value="0" min="0"></td><td><input type="number" id="diplomacia_mod" value="0"></td><td><span id="diplomacia_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Enganação</td><td><input type="number" id="enganacao_base" value="0" min="0"></td><td><input type="number" id="enganacao_bonus" value="0" min="0"></td><td><input type="number" id="enganacao_mod" value="0"></td><td><span id="enganacao_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Intimidação</td><td><input type="number" id="intimidacao_base" value="0" min="0"></td><td><input type="number" id="intimidacao_bonus" value="0" min="0"></td><td><input type="number" id="intimidacao_mod" value="0"></td><td><span id="intimidacao_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Persuasão</td><td><input type="number" id="persuasao_base" value="0" min="0"></td><td><input type="number" id="persuasao_bonus" value="0" min="0"></td><td><input type="number" id="persuasao_mod" value="0"></td><td><span id="persuasao_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Sedução</td><td><input type="number" id="seducao_base" value="0" min="0"></td><td><input type="number" id="seducao_bonus" value="0" min="0"></td><td><input type="number" id="seducao_mod" value="0"></td><td><span id="seducao_total" class="attribute-total">0</span></td></tr>
+</table>
+
+<h3>Constituição</h3>
+<table id="pericias_con">
+  <tr><th>Perícia</th><th>Base</th><th>Bônus</th><th>Mod</th><th>Total</th></tr>
+  <tr><td>Fôlego</td><td><input type="number" id="folego_base" value="0" min="0"></td><td><input type="number" id="folego_bonus" value="0" min="0"></td><td><input type="number" id="folego_mod" value="0"></td><td><span id="folego_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Resistência a Clima</td><td><input type="number" id="res_clima_base" value="0" min="0"></td><td><input type="number" id="res_clima_bonus" value="0" min="0"></td><td><input type="number" id="res_clima_mod" value="0"></td><td><span id="res_clima_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Resistência a Veneno</td><td><input type="number" id="res_veneno_base" value="0" min="0"></td><td><input type="number" id="res_veneno_bonus" value="0" min="0"></td><td><input type="number" id="res_veneno_mod" value="0"></td><td><span id="res_veneno_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Resistência Física</td><td><input type="number" id="res_fisica_base" value="0" min="0"></td><td><input type="number" id="res_fisica_bonus" value="0" min="0"></td><td><input type="number" id="res_fisica_mod" value="0"></td><td><span id="res_fisica_total" class="attribute-total">0</span></td></tr>
+  <tr><td>Resistência Mágica</td><td><input type="number" id="res_magica_base" value="0" min="0"></td><td><input type="number" id="res_magica_bonus" value="0" min="0"></td><td><input type="number" id="res_magica_mod" value="0"></td><td><span id="res_magica_total" class="attribute-total">0</span></td></tr>
+</table>
+</div>
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Obter ID da URL ou do localStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    let fichaId = urlParams.get('id') || localStorage.getItem('fichaAtual');
+    
+    if (!fichaId) {
+        if (confirm('Nenhuma ficha carregada. Deseja criar uma nova?')) {
+            window.location.href = 'index.html';
+            return;
+        }
+    }
+    
+    // Obter todas as fichas
+    const fichasSalvas = JSON.parse(localStorage.getItem('fichasRPG')) || [];
+    
+    // Encontrar a ficha atual pelo ID
+    const fichaAtual = fichasSalvas.find(f => f.id === fichaId);
+    
+    if (!fichaAtual) {
+        alert('Ficha não encontrada!');
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    // Preencher os campos da ficha
+    document.getElementById('nome').value = fichaAtual.nome || '';
+    document.getElementById('jogador').value = fichaAtual.jogador || '';
+    document.getElementById('nivel').value = fichaAtual.nivel || 1;
+    
+    // Preencher atributos
+    if (fichaAtual.atributos) {
+        document.getElementById('for_base').value = fichaAtual.atributos.for || 1;
+        document.getElementById('des_base').value = fichaAtual.atributos.des || 1;
+        // ... preencher outros atributos
+    }
+    
+    // Modificar a função salvarAutomatico para salvar pelo ID
+    function salvarAutomatico() {
+        const dados = coletarDadosFicha();
+        
+        // Atualizar apenas a ficha atual
+        const fichasAtualizadas = fichasSalvas.map(f => {
+            if (f.id === fichaId) {
+                return { ...f, ...dados };
+            }
+            return f;
+        });
+        
+        localStorage.setItem('fichasRPG', JSON.stringify(fichasAtualizadas));
+    }
+    
+    // Adicionar botão de voltar ao hub
+    const voltarBtn = document.createElement('button');
+    voltarBtn.textContent = '← Voltar ao Hub';
+    voltarBtn.onclick = () => window.location.href = 'index.html';
+    document.querySelector('.save-buttons').prepend(voltarBtn);
+    
+    // Restante do seu código original...
+});
+
+    // Verifica se há uma ficha carregada
+document.addEventListener('DOMContentLoaded', function() {
+    const fichaAtual = JSON.parse(localStorage.getItem('fichaAtual'));
+    
+    if (!fichaAtual) {
+        if (confirm('Nenhuma ficha carregada. Deseja criar uma nova?')) {
+            window.location.href = 'index.html';
+        } else {
+            window.location.href = 'index.html';
+        }
+        return;
+    }
+    
+    // Preenche os campos com os dados da ficha
+    document.getElementById('nome').value = fichaAtual.nome || '';
+    document.getElementById('jogador').value = fichaAtual.jogador || '';
+    // ... preencha outros campos conforme necessário
+    
+    // Adicione um botão de voltar ao hub
+    const voltarBtn = document.createElement('button');
+    voltarBtn.textContent = '← Voltar ao Hub';
+    voltarBtn.onclick = () => window.location.href = 'index.html';
+    document.querySelector('.save-buttons').prepend(voltarBtn);
+    
+    // Restante do seu código original...
+});
+// Versão do esquema de dados
+const VERSAO_FICHA = "1.1";
+let timeoutSalvamento;
+let alteracoesNaoSalvas = false;
+
+// Mostrar notificação temporária
+function mostrarNotificacao(mensagem, tipo = 'sucesso') {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = mensagem;
+    toast.style.backgroundColor = tipo === 'sucesso' ? '#4CAF50' : '#f44336';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Atualizar totais dos atributos primários
+function atualizarTotais() {
+    ['for', 'des', 'con', 'int', 'car'].forEach(attr => {
+        const base = +document.getElementById(`${attr}_base`).value || 0;
+        const bonus = +document.getElementById(`${attr}_bonus`).value || 0;
+        const mod = +document.getElementById(`${attr}_mod`).value || 0;
+        document.getElementById(`${attr}_total`).textContent = base + bonus + mod;
+    });
+    
+    calcularRecursos();
+    salvarAutomatico();
+}
+
+// Atualizar totais das perícias
+function atualizarTotalPericia(id) {
+    const base = +document.getElementById(`${id}_base`).value || 0;
+    const bonus = +document.getElementById(`${id}_bonus`).value || 0;
+    const mod = +document.getElementById(`${id}_mod`).value || 0;
+    document.getElementById(`${id}_total`).textContent = base + bonus + mod;
+}
+
+// Calcular recursos (vida, mana, esforço)
+function calcularRecursos() {
+    const nivel = +document.getElementById('nivel').value || 1;
+    const con = +document.getElementById('con_total').textContent || 0;
+    const des = +document.getElementById('des_total').textContent || 0;
+    const int = +document.getElementById('int_total').textContent || 0;
+
+    // Vida
+    const hpPerLevel = +document.getElementById('hp_per_level').value || 0;
+    const raceHpBonus = +document.getElementById('race_hp_bonus').value || 0;
+    const classHpBonus = +document.getElementById('class_hp_bonus').value || 0;
+    document.getElementById('vida_max').textContent = (hpPerLevel * nivel) + con + raceHpBonus + classHpBonus;
+
+    // Defesa
+    document.getElementById('defesa').textContent = 10 + Math.max(des, con);
+
+    // Mana
+    const manaPerLevel = +document.getElementById('mana_per_level').value || 0;
+    const raceManaBonus = +document.getElementById('race_mana_bonus').value || 0;
+    const classManaBonus = +document.getElementById('class_mana_bonus').value || 0;
+    document.getElementById('mana_max').textContent = (manaPerLevel * nivel) + int + raceManaBonus + classManaBonus;
+
+    // Esforço
+    const effortPerLevel = +document.getElementById('effort_per_level').value || 0;
+    const raceEffortBonus = +document.getElementById('race_effort_bonus').value || 0;
+    const classEffortBonus = +document.getElementById('class_effort_bonus').value || 0;
+    document.getElementById('esforco_max').textContent = (effortPerLevel * nivel) + con + raceEffortBonus + classEffortBonus;
+}
+
+// Sistema de salvamento automático com debounce
+function salvarAutomatico() {
+    alteracoesNaoSalvas = true;
+    clearTimeout(timeoutSalvamento);
+    timeoutSalvamento = setTimeout(() => {
+        try {
+            const dados = coletarDadosFicha();
+            dados.versao = VERSAO_FICHA;
+            const dadosString = JSON.stringify(dados);
+            
+            if (typeof(Storage) !== "undefined") {
+                localStorage.setItem('ficha_rpg_remanescentes', dadosString);
+                mostrarNotificacao('✅ Alterações salvas automaticamente');
+                alteracoesNaoSalvas = false;
+            }
+        } catch (error) {
+            console.error('Erro ao salvar automaticamente:', error);
+        }
+    }, 1000);
+}
+
+// Coletar todos os dados da ficha
+function coletarDadosFicha() {
+    const dados = {};
+    
+    // Coletar todos os inputs e textareas
+    document.querySelectorAll('input, textarea').forEach(el => {
+        if (el.id && !el.id.includes('_total')) {
+            dados[el.id] = el.value;
+        }
+    });
+    
+    // Coletar dados das tabelas dinâmicas
+    dados.habilidades = coletarDadosTabela('habilidades');
+    dados.magias = coletarDadosTabela('magias');
+    dados.inventario = coletarDadosTabela('inventario');
+    
+    return dados;
+}
+
+// Coletar dados de uma tabela dinâmica
+function coletarDadosTabela(tabelaId) {
+    const tabela = document.getElementById(tabelaId);
+    const dados = [];
+    
+    for (let i = 1; i < tabela.rows.length; i++) {
+        const linha = tabela.rows[i];
+        const linhaDados = {};
+        
+        for (let j = 0; j < linha.cells.length - 1; j++) {
+            const th = tabela.rows[0].cells[j].textContent;
+            const input = linha.cells[j].querySelector('input');
+            if (input) {
+                linhaDados[th] = input.value;
+            }
+        }
+        
+        if (Object.values(linhaDados).some(valor => valor && valor.toString().trim() !== '')) {
+            dados.push(linhaDados);
+        }
+    }
+    
+    return dados;
+}
+
+// Salvar ficha manualmente
+function salvarFicha() {
+    try {
+        const dados = coletarDadosFicha();
+        dados.versao = VERSAO_FICHA;
+        
+        if (typeof(Storage) !== "undefined") {
+            localStorage.setItem('ficha_rpg_remanescentes', JSON.stringify(dados));
+            mostrarNotificacao('✅ Ficha salva com sucesso!');
+            alteracoesNaoSalvas = false;
+        } else {
+            mostrarNotificacao('⚠️ Seu navegador não suporta salvamento local. Use a função Exportar.', 'erro');
+        }
+    } catch (error) {
+        mostrarNotificacao(`❌ Erro ao salvar: ${error.message}`, 'erro');
+    }
+}
+
+// Carregar ficha salva
+function carregarFicha() {
+    try {
+        let dados = null;
+        
+        // Tentar carregar do localStorage
+        if (typeof(Storage) !== "undefined") {
+            const dadosSalvos = localStorage.getItem('ficha_rpg_remanescentes');
+            if (dadosSalvos) {
+                dados = JSON.parse(dadosSalvos);
+            }
+        }
+        
+        if (dados) {
+            // Verificar versão
+            if (dados.versao !== VERSAO_FICHA) {
+                mostrarNotificacao('⚠️ Ficha de versão diferente. Alguns dados podem não carregar corretamente.', 'erro');
+            }
+            
+            // Restaurar inputs e textareas
+            Object.keys(dados).forEach(id => {
+                if (id !== 'versao' && id !== 'habilidades' && id !== 'magias' && id !== 'inventario') {
+                    const elemento = document.getElementById(id);
+                    if (elemento && typeof dados[id] === 'string') {
+                        elemento.value = dados[id];
+                    }
+                }
+            });
+            
+            // Restaurar tabelas dinâmicas
+            if (dados.habilidades) {
+                restaurarTabela('habilidades', dados.habilidades, adicionarHabilidade);
+            }
+            if (dados.magias) {
+                restaurarTabela('magias', dados.magias, adicionarMagia);
+            }
+            if (dados.inventario) {
+                restaurarTabela('inventario', dados.inventario, adicionarItem);
+            }
+            
+            // Recalcular totais
+            atualizarTotais();
+            calcularPesoTotal();
+            
+            mostrarNotificacao('✅ Ficha carregada com sucesso!');
+        } else {
+            mostrarNotificacao('ℹ️ Nenhum dado salvo encontrado.', 'info');
+        }
+    } catch (error) {
+        mostrarNotificacao(`❌ Erro ao carregar ficha: ${error.message}`, 'erro');
+    }
+}
+
+// Restaurar tabela a partir de dados salvos
+function restaurarTabela(tabelaId, dados, funcaoAdicionar) {
+    const tabela = document.getElementById(tabelaId);
+    while (tabela.rows.length > 1) {
+        tabela.deleteRow(1);
+    }
+    
+    dados.forEach(linhaDados => {
+        funcaoAdicionar();
+        const ultimaLinha = tabela.rows[tabela.rows.length - 1];
+        const headers = Array.from(tabela.rows[0].cells).map(cell => cell.textContent);
+        
+        headers.forEach((header, index) => {
+            if (header !== 'Remover' && linhaDados[header] !== undefined) {
+                const input = ultimaLinha.cells[index].querySelector('input');
+                if (input) {
+                    input.value = linhaDados[header];
+                }
+            }
+        });
+    });
+}
+
+// Exportar ficha para arquivo JSON
+function exportarFicha() {
+    try {
+        const dados = coletarDadosFicha();
+        dados.versao = VERSAO_FICHA;
+        const nomePersonagem = dados.nome || 'personagem';
+        
+        const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `ficha_${nomePersonagem.replace(/\s+/g, '_')}.json`;
+        link.click();
+        
+        mostrarNotificacao('📥 Ficha exportada com sucesso!');
+    } catch (error) {
+        mostrarNotificacao(`❌ Erro ao exportar: ${error.message}`, 'erro');
+    }
+}
+
+// Importar ficha de arquivo JSON
+function importarFicha() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = event => {
+            try {
+                const dados = JSON.parse(event.target.result);
+                if (confirm('Isso substituirá todos os dados atuais. Continuar?')) {
+                    preencherFicha(dados);
+                    mostrarNotificacao('✅ Ficha importada com sucesso!');
+                }
+            } catch (error) {
+                mostrarNotificacao(`❌ Erro ao importar: ${error.message}`, 'erro');
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+// Preencher ficha com dados importados
+function preencherFicha(dados) {
+    // Limpar tabelas dinâmicas
+    ['habilidades', 'magias', 'inventario'].forEach(id => {
+        const tabela = document.getElementById(id);
+        while (tabela.rows.length > 1) {
+            tabela.deleteRow(1);
+        }
+    });
+    
+    // Preencher campos básicos
+    Object.keys(dados).forEach(id => {
+        if (id !== 'versao' && id !== 'habilidades' && id !== 'magias' && id !== 'inventario') {
+            const elemento = document.getElementById(id);
+            if (elemento) {
+                elemento.value = dados[id] || '';
+            }
+        }
+    });
+    
+    // Preencher tabelas dinâmicas
+    if (dados.habilidades) {
+        dados.habilidades.forEach(habilidade => {
+            adicionarHabilidade();
+            const tabela = document.getElementById('habilidades');
+            const linha = tabela.rows[tabela.rows.length - 1];
+            
+            ['Nome', 'Custo', 'Alcance', 'Efeito', 'Usos/Dia'].forEach((campo, index) => {
+                if (habilidade[campo] !== undefined) {
+                    const input = linha.cells[index].querySelector('input');
+                    if (input) input.value = habilidade[campo];
+                }
+            });
+        });
+    }
+    
+    if (dados.magias) {
+        dados.magias.forEach(magia => {
+            adicionarMagia();
+            const tabela = document.getElementById('magias');
+            const linha = tabela.rows[tabela.rows.length - 1];
+            
+            ['Nome', 'Escola', 'Nível', 'Elemento', 'Custo', 'Alcance', 'Descrição'].forEach((campo, index) => {
+                if (magia[campo] !== undefined) {
+                    const input = linha.cells[index].querySelector('input');
+                    if (input) input.value = magia[campo];
+                }
+            });
+        });
+    }
+    
+    if (dados.inventario) {
+        dados.inventario.forEach(item => {
+            adicionarItem();
+            const tabela = document.getElementById('inventario');
+            const linha = tabela.rows[tabela.rows.length - 1];
+            
+            ['Item', 'Qtd', 'Peso/U', 'Peso Total', 'Descrição'].forEach((campo, index) => {
+                if (item[campo] !== undefined) {
+                    const input = linha.cells[index].querySelector('input');
+                    if (input) input.value = item[campo];
+                }
+            });
+        });
+        calcularPesoTotal();
+    }
+    
+    atualizarTotais();
+}
+
+// Funções para adicionar linhas dinâmicas
+function criarLinhaTabela(tabelaId, colunas, callback) {
+    const tabela = document.getElementById(tabelaId);
+    const linha = tabela.insertRow();
+    
+    colunas.forEach((tipo, index) => {
+        const celula = linha.insertCell();
+        const input = document.createElement('input');
+        input.type = tipo === 'number' ? 'number' : 'text';
+        if (tipo === 'number') input.min = '0';
+        input.addEventListener('change', () => {
+            if (callback) callback();
+            salvarAutomatico();
+        });
+        celula.appendChild(input);
+    });
+    
+    // Botão remover
+    const celulaRemover = linha.insertCell();
+    celulaRemover.innerHTML = `<button onclick="this.closest('tr').remove(); ${callback ? callback() : ''} salvarAutomatico()">❌</button>`;
+}
+
+function adicionarHabilidade() {
+    criarLinhaTabela('habilidades', ['text', 'number', 'text', 'text', 'number']);
+}
+
+function adicionarMagia() {
+    criarLinhaTabela('magias', ['text', 'text', 'number', 'text', 'number', 'text', 'text']);
+}
+
+function adicionarItem() {
+    const tabela = document.getElementById('inventario');
+    const linha = tabela.insertRow();
+    
+    // Item
+    const celulaItem = linha.insertCell();
+    const inputItem = document.createElement('input');
+    inputItem.type = 'text';
+    inputItem.addEventListener('change', salvarAutomatico);
+    celulaItem.appendChild(inputItem);
+    
+    // Quantidade
+    const celulaQtd = linha.insertCell();
+    const inputQtd = document.createElement('input');
+    inputQtd.type = 'number';
+    inputQtd.min = '0';
+    inputQtd.value = '0';
+    inputQtd.addEventListener('change', function() {
+        calcularPesoTotal();
+        salvarAutomatico();
+    });
+    celulaQtd.appendChild(inputQtd);
+    
+    // Peso unitário
+    const celulaPeso = linha.insertCell();
+    const inputPeso = document.createElement('input');
+    inputPeso.type = 'number';
+    inputPeso.min = '0';
+    inputPeso.step = '0.1';
+    inputPeso.value = '0';
+    inputPeso.addEventListener('change', function() {
+        calcularPesoTotal();
+        salvarAutomatico();
+    });
+    celulaPeso.appendChild(inputPeso);
+    
+    // Peso total (readonly)
+    const celulaPesoTotal = linha.insertCell();
+    const inputPesoTotal = document.createElement('input');
+    inputPesoTotal.type = 'number';
+    inputPesoTotal.value = '0';
+    inputPesoTotal.readOnly = true;
+    celulaPesoTotal.appendChild(inputPesoTotal);
+    
+    // Descrição
+    const celulaDesc = linha.insertCell();
+    const inputDesc = document.createElement('input');
+    inputDesc.type = 'text';
+    inputDesc.addEventListener('change', salvarAutomatico);
+    celulaDesc.appendChild(inputDesc);
+    
+    // Botão remover
+    const celulaRemover = linha.insertCell();
+    celulaRemover.innerHTML = '<button onclick="this.closest(\'tr\').remove(); calcularPesoTotal(); salvarAutomatico()">❌</button>';
+}
+
+// Calcular peso total do inventário
+function calcularPesoTotal() {
+    let total = 0;
+    const tabela = document.getElementById('inventario');
+    
+    for (let i = 1; i < tabela.rows.length; i++) {
+        const qtd = +tabela.rows[i].cells[1].querySelector('input').value || 0;
+        const peso = +tabela.rows[i].cells[2].querySelector('input').value || 0;
+        const pesoTotal = qtd * peso;
+        tabela.rows[i].cells[3].querySelector('input').value = pesoTotal.toFixed(1);
+        total += pesoTotal;
+    }
+    
+    document.getElementById('peso_total').textContent = total.toFixed(1);
+}
+
+// Verificar alterações não salvas
+function existemAlteracoesNaoSalvas() {
+    return alteracoesNaoSalvas;
+}
+
+// Event listeners usando event delegation
+document.addEventListener('input', function(e) {
+    if (e.target.matches('input[type="number"], input[type="text"], textarea')) {
+        salvarAutomatico();
+    }
+    
+    if (e.target.id && (e.target.id.includes('_base') || e.target.id.includes('_bonus') || e.target.id.includes('_mod'))) {
+        const idPericia = e.target.id.replace(/_base|_bonus|_mod/g, '');
+        atualizarTotalPericia(idPericia);
+    }
+});
+
+// Avisar sobre alterações não salvas
+window.addEventListener('beforeunload', function(e) {
+    if (existemAlteracoesNaoSalvas()) {
+        e.preventDefault();
+        e.returnValue = 'Você tem alterações não salvas. Deseja realmente sair?';
+        return e.returnValue;
+    }
+});
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', function() {
+    carregarFicha();
+    atualizarTotais();
+});
+</script>
+
+</body>
+</html>
