@@ -102,6 +102,52 @@
                 });
             }
             
+// Adicione esta função para gerar IDs únicos
+function gerarIdUnico() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+// Modifique o evento de criação de nova ficha
+confirmarNovaFicha.addEventListener('click', () => {
+    const nome = document.getElementById('novoPersonagemNome').value;
+    const jogador = document.getElementById('novoJogadorNome').value;
+    
+    if (!nome) {
+        alert('Digite um nome para o personagem!');
+        return;
+    }
+    
+    const novaFicha = {
+        id: gerarIdUnico(), // ID único aqui
+        nome,
+        jogador,
+        nivel: 1,
+        dataCriacao: new Date().toISOString(),
+        atributos: {
+            for: 1, des: 1, con: 1, int: 1, car: 1
+        }
+    };
+    
+    // Obter fichas existentes
+    const fichasSalvas = JSON.parse(localStorage.getItem('fichasRPG')) || [];
+    
+    // Adicionar nova ficha
+    fichasSalvas.push(novaFicha);
+    localStorage.setItem('fichasRPG', JSON.stringify(fichasSalvas));
+    
+    // Salvar a ficha atual pelo ID
+    localStorage.setItem('fichaAtual', novaFicha.id);
+    
+    // Redirecionar para a ficha com o ID como parâmetro
+    window.location.href = `ficha.html?id=${novaFicha.id}`;
+});
+
+// Modifique a função abrirFicha
+function abrirFicha(id) {
+    localStorage.setItem('fichaAtual', id);
+    window.location.href = `ficha.html?id=${id}`;
+}
+
             // Mostrar formulário de nova ficha
             novaFichaBtn.addEventListener('click', () => {
                 novaFichaForm.classList.remove('hidden');
